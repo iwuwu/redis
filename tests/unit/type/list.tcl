@@ -436,8 +436,11 @@ start_server {
 
         test "$pop: with non-integer timeout" {
             set rd [redis_deferring_client]
-            $rd $pop blist1 1.1
-            assert_error "ERR*not an integer*" {$rd read}
+            r del blist1
+            $rd $pop blist1 0.1
+            r rpush blist1 foo
+            assert_equal {blist1 foo} [$rd read]
+            assert_equal 0 [r exists blist1]
         }
 
         test "$pop: with zero timeout should block indefinitely" {
@@ -507,7 +510,9 @@ start_server {
             create_list xlist "$large c"
             assert_equal 3 [r rpushx xlist d]
             assert_equal 4 [r lpushx xlist a]
-            assert_equal "a $large c d" [r lrange xlist 0 -1]
+            assert_equal 6 [r rpushx xlist 42 x]
+            assert_equal 9 [r lpushx xlist y3 y2 y1]
+            assert_equal "y1 y2 y3 a $large c d 42 x" [r lrange xlist 0 -1]
         }
 
         test "LINSERT - $type" {
